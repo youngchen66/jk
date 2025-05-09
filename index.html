@@ -229,11 +229,22 @@
     const userStats = {}; // 使用者答題紀錄物件
 
     function login() {
-      username = document.getElementById("username").value.trim();
-      if (username) {
-        document.getElementById("login-section").style.display = "none";
-        document.getElementById("game-section").style.display = "block";
-        document.getElementById("user-display").textContent = `使用者：${username}`;
+  const input = document.getElementById("username");
+  const enteredName = input.value.trim();
+  if (enteredName) {
+    // 允許多人登入，使用 localStorage 儲存使用者清單
+    username = enteredName;
+    if (!userStats[username]) {
+      userStats[username] = { correct: 0, total: 0 };
+    }
+    document.getElementById("login-section").style.display = "none";
+    document.getElementById("game-section").style.display = "block";
+    document.getElementById("user-display").textContent = `使用者：${username}`;
+    loadGame();
+  } else {
+    alert("請輸入名稱");
+  }
+}`;
         if (!userStats[username]) userStats[username] = { correct: 0, total: 0 };
         loadGame();
       } else {
