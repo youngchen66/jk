@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>K5 英文句型遊戲</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f8ff;
+      text-align: center;
+      padding: 40px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .sentence-box, .word-bank {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+      min-height: 60px;
+      padding: 10px;
+      border: 2px dashed #ccc;
+      background: #fafafa;
+    }
+    .word {
+      background: #e0f7fa;
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 6px;
+      cursor: grab;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="login-section">
+    <h2>🔐 登入遊戲</h2>
+    <input type="text" id="username" placeholder="輸入使用者名稱">
+    <br>
+    <button onclick="login()">登入</button>
+  </div>
+
+  <div class="container" id="game-section" style="display: none;">
+    <h2>✍️ 組合英文句子</h2>
+    <p id="user-display"></p>
+    <div><strong>提示：</strong><span id="hint"></span></div>
+    <img id="question-img" src="" alt="" style="max-width: 100%; margin-top: 10px;">
+    <div id="word-bank" class="word-bank"></div>
+    <div id="sentence-box" class="sentence-box" ondragover="event.preventDefault()" ondrop="drop(event)"></div>
+    <button onclick="checkSentence()">✅ 確認句子</button>
+    <button onclick="nextQuestion()">➡️ 下一題</button>
+    <p id="feedback"></p>
+    <p id="progress"></p>
+  </div>
+
+  <script>
+    // 題庫：100 題句型
+    const questionBank = [
+  { sentence: ["I", "like", "apples"], hint: "我喜歡蘋果", img: "images/q1.jpg" },
+  { sentence: ["She", "has", "a", "cat"], hint: "她有一隻貓", img: "images/q2.jpg" },
+  { sentence: ["We", "play", "soccer", "after", "school"], hint: "我們放學後踢足球", img: "images/q3.jpg" },
+  { sentence: ["He", "is", "reading", "a", "book"], hint: "他正在看書", img: "images/q4.jpg" },
+  { sentence: ["Do", "you", "like", "English"], hint: "你喜歡英文嗎？", img: "images/q5.jpg" },
+  { sentence: ["Yes", "I", "do"], hint: "是的，我喜歡。", img: "images/q6.jpg" },
+  { sentence: ["No", "I", "don’t"], hint: "不，我不喜歡。", img: "images/q7.jpg" },
+  { sentence: ["She", "goes", "to", "school", "by", "bus"], hint: "她搭公車上學", img: "images/q8.jpg" },
+  { sentence: ["He", "rides", "a", "bike"], hint: "他騎腳踏車", img: "images/q9.jpg" },
+  { sentence: ["It", "is", "raining", "today"], hint: "今天正在下雨", img: "images/q10.jpg" },
+  { sentence: ["My", "father", "is", "a", "doctor"], hint: "我爸爸是醫生", img: "images/q11.jpg" },
+  { sentence: ["She", "likes", "to", "draw", "pictures"], hint: "她喜歡畫圖", img: "images/q12.jpg" },
+  { sentence: ["They", "watch", "TV", "at", "night"], hint: "他們晚上看電視", img: "images/q13.jpg" },
+  { sentence: ["The", "dog", "is", "very", "cute"], hint: "這隻狗很可愛", img: "images/q14.jpg" },
+  { sentence: ["I", "can", "ride", "a", "bike"], hint: "我會騎腳踏車", img: "images/q15.jpg" },
+  { sentence: ["Open", "your", "book", "please"], hint: "請打開你的書", img: "images/q16.jpg" },
+  { sentence: ["We", "have", "lunch", "at", "noon"], hint: "我們中午吃午餐", img: "images/q17.jpg" },
+  { sentence: ["Do", "you", "like", "banana"], hint: "你喜歡香蕉嗎？", img: "images/q18.jpg" },
+  { sentence: ["He", "can", "swim", "well"], hint: "他游泳很厲害", img: "images/q19.jpg" },
+  { sentence: ["They", "go", "to", "the", "library"], hint: "他們去圖書館", img: "images/q20.jpg" },
+  { sentence: ["The", "cat", "is", "under", "the", "table"], hint: "貓在桌子下", img: "images/q21.jpg" },
+  { sentence: ["I", "have", "a", "red", "bag"], hint: "我有一個紅色的包包", img: "images/q22.jpg" },
+  { sentence: ["Can", "you", "help", "me"], hint: "你可以幫我嗎？", img: "images/q23.jpg" },
+  { sentence: ["Let’s", "play", "basketball"], hint: "我們來打籃球吧", img: "images/q24.jpg" },
+  { sentence: ["She", "wants", "a", "new", "pencil"], hint: "她想要一支新鉛筆", img: "images/q25.jpg" },
+  { sentence: ["Wash", "your", "hands"], hint: "請洗手", img: "images/q26.jpg" },
+  { sentence: ["The", "bird", "can", "fly"], hint: "那隻鳥會飛", img: "images/q27.jpg" },
+  { sentence: ["My", "brother", "is", "tall"], hint: "我弟弟很高", img: "images/q28.jpg" },
+  { sentence: ["The", "sun", "is", "yellow"], hint: "太陽是黃色的", img: "images/q29.jpg" },
+  { sentence: ["Put", "on", "your", "shoes"], hint: "請穿上你的鞋子", img: "images/q30.jpg" },
+  { sentence: ["I", "am", "hungry"], hint: "我肚子餓了", img: "images/q31.jpg" },
+  { sentence: ["She", "eats", "an", "apple"], hint: "她吃一顆蘋果", img: "images/q32.jpg" },
+  { sentence: ["We", "see", "a", "rainbow"], hint: "我們看到一道彩虹", img: "images/q33.jpg" },
+  { sentence: ["He", "is", "a", "good", "student"], hint: "他是個好學生", img: "images/q34.jpg" },
+  { sentence: ["My", "mom", "is", "cooking"], hint: "我媽媽正在煮飯", img: "images/q35.jpg" },
+  { sentence: ["This", "book", "is", "interesting"], hint: "這本書很有趣", img: "images/q36.jpg" },
+  { sentence: ["I", "go", "to", "bed", "at", "nine"], hint: "我九點上床睡覺", img: "images/q37.jpg" },
+  { sentence: ["He", "brushes", "his", "teeth"], hint: "他刷牙", img: "images/q38.jpg" },
+  { sentence: ["My", "sister", "is", "happy"], hint: "我妹妹很開心", img: "images/q39.jpg" },
+  { sentence: ["We", "like", "ice", "cream"], hint: "我們喜歡冰淇淋", img: "images/q40.jpg" },
+  { sentence: ["It", "is", "cold", "today"], hint: "今天很冷", img: "images/q41.jpg" },
+  { sentence: ["The", "boy", "runs", "fast"], hint: "那個男孩跑得很快", img: "images/q42.jpg" },
+  { sentence: ["Sit", "down", "please"], hint: "請坐下", img: "images/q43.jpg" },
+  { sentence: ["I", "see", "a", "monkey"], hint: "我看到一隻猴子", img: "images/q44.jpg" },
+  { sentence: ["She", "draws", "a", "house"], hint: "她畫一間房子", img: "images/q45.jpg" },
+  { sentence: ["We", "like", "music"], hint: "我們喜歡音樂", img: "images/q46.jpg" },
+  { sentence: ["Turn", "off", "the", "light"], hint: "請關燈", img: "images/q47.jpg" },
+  { sentence: ["I", "can", "jump"], hint: "我會跳", img: "images/q48.jpg" },
+  { sentence: ["Open", "the", "door"], hint: "請開門", img: "images/q49.jpg" },
+  { sentence: ["This", "is", "my", "friend"], hint: "這是我的朋友", img: "images/q50.jpg" },
+  { sentence: ["She", "sings", "a", "song"], hint: "她唱了一首歌", img: "images/q51.jpg" },
+  { sentence: ["I", "am", "tired"], hint: "我累了", img: "images/q52.jpg" },
+  { sentence: ["Let’s", "have", "fun"], hint: "讓我們來玩吧", img: "images/q53.jpg" },
+  { sentence: ["I", "see", "a", "bird"], hint: "我看到一隻鳥", img: "images/q54.jpg" },
+  { sentence: ["The", "fish", "is", "swimming"], hint: "魚正在游泳", img: "images/q55.jpg" },
+  { sentence: ["She", "writes", "a", "letter"], hint: "她寫信", img: "images/q56.jpg" },
+  { sentence: ["We", "go", "to", "the", "market"], hint: "我們去市場", img: "images/q57.jpg" },
+  { sentence: ["He", "feeds", "the", "dog"], hint: "他餵狗", img: "images/q58.jpg" },
+  { sentence: ["It", "is", "sunny", "today"], hint: "今天出太陽", img: "images/q59.jpg" },
+  { sentence: ["I", "wear", "a", "hat"], hint: "我戴帽子", img: "images/q60.jpg" },
+  { sentence: ["She", "likes", "strawberries"], hint: "她喜歡草莓", img: "images/q61.jpg" },
+  { sentence: ["Let’s", "draw", "a", "car"], hint: "我們來畫車子", img: "images/q62.jpg" },
+  { sentence: ["They", "dance", "together"], hint: "他們一起跳舞", img: "images/q63.jpg" },
+  { sentence: ["Please", "be", "quiet"], hint: "請安靜", img: "images/q64.jpg" },
+  { sentence: ["He", "likes", "math"], hint: "他喜歡數學", img: "images/q65.jpg" },
+  { sentence: ["The", "clock", "is", "on", "the", "wall"], hint: "時鐘在牆上", img: "images/q66.jpg" },
+  { sentence: ["I", "like", "to", "run"], hint: "我喜歡跑步", img: "images/q67.jpg" },
+  { sentence: ["We", "have", "English", "class"], hint: "我們有英文課", img: "images/q68.jpg" },
+  { sentence: ["The", "rabbit", "is", "white"], hint: "兔子是白色的", img: "images/q69.jpg" },
+  { sentence: ["He", "goes", "home", "at", "five"], hint: "他五點回家", img: "images/q70.jpg" },
+  { sentence: ["She", "eats", "a", "sandwich"], hint: "她吃一個三明治", img: "images/q71.jpg" },
+  { sentence: ["It", "is", "windy"], hint: "風很大", img: "images/q72.jpg" },
+  { sentence: ["My", "bag", "is", "blue"], hint: "我的書包是藍色的", img: "images/q73.jpg" },
+  { sentence: ["She", "has", "two", "brothers"], hint: "她有兩個兄弟", img: "images/q74.jpg" },
+  { sentence: ["This", "cake", "is", "yummy"], hint: "這蛋糕很好吃", img: "images/q75.jpg" },
+  { sentence: ["Can", "you", "run", "fast"], hint: "你跑得快嗎？", img: "images/q76.jpg" },
+  { sentence: ["The", "frog", "is", "green"], hint: "青蛙是綠色的", img: "images/q77.jpg" },
+  { sentence: ["Let’s", "ride", "a", "bike"], hint: "我們來騎腳踏車吧", img: "images/q78.jpg" },
+  { sentence: ["She", "wears", "a", "dress"], hint: "她穿洋裝", img: "images/q79.jpg" },
+  { sentence: ["I", "love", "my", "family"], hint: "我愛我的家人", img: "images/q80.jpg" },
+  { sentence: ["Look", "at", "the", "sky"], hint: "看看天空", img: "images/q81.jpg" },
+  { sentence: ["The", "teacher", "is", "nice"], hint: "老師人很好", img: "images/q82.jpg" },
+  { sentence: ["Let’s", "color", "the", "picture"], hint: "我們來上色吧", img: "images/q83.jpg" },
+  { sentence: ["She", "is", "my", "friend"], hint: "她是我的朋友", img: "images/q84.jpg" },
+  { sentence: ["I", "am", "seven", "years", "old"], hint: "我七歲了", img: "images/q85.jpg" },
+  { sentence: ["It", "is", "hot", "today"], hint: "今天很熱", img: "images/q86.jpg" },
+  { sentence: ["We", "are", "at", "school"], hint: "我們在學校", img: "images/q87.jpg" },
+  { sentence: ["The", "girl", "is", "smiling"], hint: "那女孩在笑", img: "images/q88.jpg" },
+  { sentence: ["I", "like", "to", "sing"], hint: "我喜歡唱歌", img: "images/q89.jpg" },
+  { sentence: ["He", "is", "my", "cousin"], hint: "他是我表哥", img: "images/q90.jpg" },
+  { sentence: ["Do", "you", "want", "juice"], hint: "你想喝果汁嗎？", img: "images/q91.jpg" },
+  { sentence: ["She", "drinks", "milk"], hint: "她喝牛奶", img: "images/q92.jpg" },
+  { sentence: ["This", "is", "my", "toy"], hint: "這是我的玩具", img: "images/q93.jpg" },
+  { sentence: ["He", "likes", "science"], hint: "他喜歡自然課", img: "images/q94.jpg" },
+  { sentence: ["I", "have", "a", "question"], hint: "我有一個問題", img: "images/q95.jpg" },
+  { sentence: ["She", "eats", "noodles"], hint: "她吃麵", img: "images/q96.jpg" },
+  { sentence: ["We", "see", "a", "butterfly"], hint: "我們看到蝴蝶", img: "images/q97.jpg" },
+  { sentence: ["It", "is", "snowing"], hint: "正在下雪", img: "images/q98.jpg" },
+  { sentence: ["This", "pen", "is", "blue"], hint: "這支筆是藍色的", img: "images/q99.jpg" }
+  { sentence: ["Let’s", "go", "to", "the", "zoo"], hint: "我們去動物園吧！", img: "images/q100.jpg" }
+,
+  { sentence: ["The", "students", "are", "cleaning", "the", "classroom", "together", "this", "morning"], hint: "學生們今天早上一起打掃教室", img: "images/q101.jpg" },
+  { sentence: ["I", "am", "going", "to", "the", "zoo", "with", "my", "family", "tomorrow"], hint: "我明天要和家人去動物園", img: "images/q102.jpg" },
+  { sentence: ["She", "is", "wearing", "a", "beautiful", "red", "dress", "for", "the", "party"], hint: "她為派對穿了一件漂亮的紅洋裝", img: "images/q103.jpg" },
+  { sentence: ["My", "brother", "and", "I", "like", "to", "play", "basketball", "after", "school"], hint: "我和哥哥放學後喜歡打籃球", img: "images/q104.jpg" },
+  { sentence: ["The", "cat", "is", "sleeping", "under", "the", "table", "in", "the", "kitchen"], hint: "貓正在廚房的桌子下睡覺", img: "images/q105.jpg" },
+  { sentence: ["We", "are", "going", "on", "a", "picnic", "at", "the", "park", "today"], hint: "我們今天要去公園野餐", img: "images/q106.jpg" },
+  { sentence: ["My", "mom", "cooked", "a", "delicious", "dinner", "for", "the", "whole", "family"], hint: "我媽媽為全家煮了一頓好吃的晚餐", img: "images/q107.jpg" },
+  { sentence: ["The", "children", "are", "singing", "songs", "on", "the", "school", "stage", "now"], hint: "孩子們現在正在學校舞台上唱歌", img: "images/q108.jpg" },
+  { sentence: ["I", "have", "to", "finish", "my", "homework", "before", "I", "can", "watch", "TV"], hint: "我必須先做完功課才能看電視", img: "images/q109.jpg" },
+  { sentence: ["They", "are", "drawing", "pictures", "of", "animals", "in", "the", "art", "class"], hint: "他們在美術課畫動物的圖畫", img: "images/q110.jpg" },
+  { sentence: ["Dad", "and", "I", "go", "to", "the", "supermarket", "every", "Saturday"], hint: "我和爸爸每週六去超市", img: "images/q111.jpg" },
+  { sentence: ["She", "practices", "the", "piano", "every", "day", "after", "dinner"], hint: "她每天晚餐後練鋼琴", img: "images/q112.jpg" },
+  { sentence: ["The", "bus", "comes", "to", "our", "school", "at", "eight", "o’clock"], hint: "公車八點到我們學校", img: "images/q113.jpg" },
+  { sentence: ["I", "see", "many", "ducks", "swimming", "in", "the", "pond"], hint: "我看到許多鴨子在池塘裡游泳", img: "images/q114.jpg" },
+  { sentence: ["She", "wants", "to", "become", "a", "doctor", "when", "she", "grows", "up"], hint: "她長大想當醫生", img: "images/q115.jpg" },
+  { sentence: ["The", "sun", "shines", "brightly", "in", "the", "blue", "sky"], hint: "太陽在藍天中閃耀", img: "images/q116.jpg" },
+  { sentence: ["We", "have", "a", "test", "in", "English", "class", "next", "week"], hint: "我們下週英文課有考試", img: "images/q117.jpg" },
+  { sentence: ["He", "helps", "his", "sister", "with", "her", "homework", "every", "evening"], hint: "他每天晚上幫妹妹寫功課", img: "images/q118.jpg" },
+  { sentence: ["Our", "teacher", "is", "reading", "a", "story", "to", "the", "class"], hint: "老師正在給班上讀故事", img: "images/q119.jpg" },
+  { sentence: ["I", "need", "to", "buy", "a", "new", "pencil", "and", "notebook"], hint: "我需要買新鉛筆和筆記本", img: "images/q120.jpg" },
+  { sentence: ["The", "birds", "are", "building", "a", "nest", "in", "the", "tree"], hint: "鳥兒正在樹上築巢", img: "images/q121.jpg" },
+  { sentence: ["She", "drinks", "a", "glass", "of", "milk", "every", "morning"], hint: "她每天早上喝一杯牛奶", img: "images/q122.jpg" },
+  { sentence: ["We", "watched", "a", "movie", "together", "last", "night"], hint: "我們昨晚一起看了電影", img: "images/q123.jpg" },
+  { sentence: ["He", "plays", "the", "guitar", "very", "well"], hint: "他吉他彈得很好", img: "images/q124.jpg" },
+  { sentence: ["My", "family", "went", "to", "the", "beach", "on", "Sunday"], hint: "我家週日去海邊了", img: "images/q125.jpg" },
+  { sentence: ["The", "flowers", "in", "the", "garden", "are", "beautiful"], hint: "花園裡的花很漂亮", img: "images/q126.jpg" },
+  { sentence: ["I", "have", "a", "pet", "dog", "named", "Bobby"], hint: "我有一隻叫 Bobby 的狗", img: "images/q127.jpg" },
+  { sentence: ["She", "is", "studying", "for", "the", "math", "test"], hint: "她正在準備數學考試", img: "images/q128.jpg" },
+  { sentence: ["Let’s", "make", "cookies", "together", "this", "afternoon"], hint: "今天下午我們一起做餅乾吧", img: "images/q129.jpg" },
+  { sentence: ["The", "baby", "is", "sleeping", "in", "the", "crib"], hint: "嬰兒正在搖籃裡睡覺", img: "images/q130.jpg" },
+  { sentence: ["She", "found", "a", "coin", "on", "the", "floor"], hint: "她在地上撿到一枚硬幣", img: "images/q131.jpg" },
+  { sentence: ["They", "will", "visit", "grandma", "next", "weekend"], hint: "他們下週末會拜訪奶奶", img: "images/q132.jpg" },
+  { sentence: ["It", "is", "fun", "to", "play", "with", "friends"], hint: "和朋友玩很開心", img: "images/q133.jpg" },
+  { sentence: ["We", "read", "a", "book", "about", "dinosaurs"], hint: "我們讀了一本關於恐龍的書", img: "images/q134.jpg" },
+  { sentence: ["Dad", "is", "washing", "the", "car"], hint: "爸爸正在洗車", img: "images/q135.jpg" },
+  { sentence: ["The", "sky", "is", "full", "of", "stars"], hint: "天空佈滿星星", img: "images/q136.jpg" },
+  { sentence: ["He", "is", "drawing", "a", "picture", "of", "a", "cat"], hint: "他在畫一隻貓", img: "images/q137.jpg" },
+  { sentence: ["I", "ate", "a", "banana", "and", "an", "orange"], hint: "我吃了香蕉和橘子", img: "images/q138.jpg" },
+  { sentence: ["They", "are", "playing", "games", "on", "the", "computer"], hint: "他們在電腦上玩遊戲", img: "images/q139.jpg" },
+  { sentence: ["She", "is", "watering", "the", "plants", "in", "the", "garden"], hint: "她正在澆花園裡的植物", img: "images/q140.jpg" },
+  { sentence: ["We", "went", "hiking", "in", "the", "mountains"], hint: "我們去爬山了", img: "images/q141.jpg" },
+  { sentence: ["The", "teacher", "gave", "us", "homework", "today"], hint: "老師今天給我們作業", img: "images/q142.jpg" },
+  { sentence: ["Mom", "baked", "a", "cake", "for", "my", "birthday"], hint: "媽媽為我生日烤蛋糕", img: "images/q143.jpg" },
+  { sentence: ["He", "is", "washing", "his", "hands", "before", "lunch"], hint: "他午餐前在洗手", img: "images/q144.jpg" },
+  { sentence: ["I", "put", "my", "toys", "back", "in", "the", "box"], hint: "我把玩具放回盒子裡", img: "images/q145.jpg" },
+  { sentence: ["We", "are", "waiting", "for", "the", "bus"], hint: "我們在等公車", img: "images/q146.jpg" },
+  { sentence: ["She", "found", "a", "pretty", "shell", "on", "the", "beach"], hint: "她在海灘上撿到漂亮的貝殼", img: "images/q147.jpg" },
+  { sentence: ["The", "mouse", "is", "hiding", "behind", "the", "box"], hint: "老鼠躲在盒子後面", img: "images/q148.jpg" },
+  { sentence: ["I", "am", "reading", "a", "funny", "story", "book"], hint: "我在讀一本有趣的故事書", img: "images/q149.jpg" },
+  { sentence: ["Let’s", "take", "a", "picture", "together"], hint: "我們一起拍張照吧", img: "images/q150.jpg" } 
+]; = 0;
+    let username = "";
+    const userStats = {}; // 使用者答題紀錄物件
+
+    function login() {
+      username = document.getElementById("username").value.trim();
+      if (username) {
+        document.getElementById("login-section").style.display = "none";
+        document.getElementById("game-section").style.display = "block";
+        document.getElementById("user-display").textContent = `使用者：${username}`;
+        if (!userStats[username]) userStats[username] = { correct: 0, total: 0 };
+        loadGame();
+      } else {
+        alert("請輸入名稱");
+      }
+    }
+
+    function loadGame() {
+      const question = questionBank[currentIndex];
+      document.getElementById("hint").textContent = question.hint;
+      document.getElementById("question-img").src = question.img;
+      const wordBank = document.getElementById("word-bank");
+      wordBank.innerHTML = "";
+      const shuffled = [...question.sentence].sort(() => Math.random() - 0.5);
+      shuffled.forEach(word => {
+        const span = document.createElement("span");
+        span.className = "word";
+        span.draggable = true;
+        span.textContent = word;
+        span.ondragstart = e => e.dataTransfer.setData("text", word);
+        wordBank.appendChild(span);
+      });
+      document.getElementById("sentence-box").innerHTML = "";
+      document.getElementById("feedback").textContent = "";
+      updateProgress();
+    }
+
+    function drop(e) {
+      const word = e.dataTransfer.getData("text");
+      const span = document.createElement("span");
+      span.className = "word";
+      span.textContent = word;
+      document.getElementById("sentence-box").appendChild(span);
+    }
+
+    function checkSentence() {
+      const userWords = Array.from(document.getElementById("sentence-box").children).map(el => el.textContent);
+      const correct = questionBank[currentIndex].sentence.join(" ");
+      const user = userWords.join(" ");
+      const feedback = document.getElementById("feedback");
+      userStats[username].total++;
+      if (user === correct) {
+        feedback.textContent = "🎉 答對了！";
+        feedback.style.color = "green";
+        userStats[username].correct++;
+      } else {
+        feedback.textContent = `❌ 答錯了，正確答案：${correct}`;
+        feedback.style.color = "red";
+      }
+      updateProgress();
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex >= questionBank.length) {
+        alert("🎉 恭喜完成所有題目！\n正確題數：" + userStats[username].correct + "/" + userStats[username].total);
+        currentIndex = 0;
+        userStats[username].correct = 0;
+        userStats[username].total = 0;
+      }
+      loadGame();
+    }
+
+    function updateProgress() {
+      const p = document.getElementById("progress");
+      const stats = userStats[username];
+      p.textContent = `進度：第 ${currentIndex + 1} 題 / 共 ${questionBank.length} 題 ｜ 正確題數：${stats.correct} / ${stats.total}`;
+    }
+  </script>
+</body>
+</html>
